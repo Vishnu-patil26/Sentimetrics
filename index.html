@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhoneMatch AI — Smart Mobile Recommendation System</title>
+  <meta name="description" content="AI-powered mobile phone recommendation engine using Content-Based Filtering. Find your perfect phone match in 4 steps." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ========================================
+       ROOT & DESIGN TOKENS
+    ======================================== */
+    :root {
+      --bg-deepest: #04060d;
+      --bg-dark:    #080e1c;
+      --bg-card:    rgba(12, 20, 40, 0.85);
+      --bg-glass:   rgba(20, 35, 70, 0.45);
+      --bg-input:   rgba(15, 25, 55, 0.7);
+
+      --accent-primary:  #4f8ef7;
+      --accent-glow:     #3b7ff5;
+      --accent-cyan:     #22d3ee;
+      --accent-violet:   #a78bfa;
+      --accent-gold:     #fbbf24;
+      --accent-green:    #34d399;
+      --accent-rose:     #fb7185;
+
+      --text-primary:   #e8f0fe;
+      --text-secondary: #8ca4cc;
+      --text-muted:     #4a6080;
+
+      --border-subtle:  rgba(79, 142, 247, 0.15);
+      --border-glow:    rgba(79, 142, 247, 0.4);
+
+      --radius-sm:  8px;
+      --radius-md:  14px;
+      --radius-lg:  20px;
+      --radius-xl:  28px;
+
+      --shadow-card: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--border-subtle);
+      --shadow-glow: 0 0 40px rgba(79, 142, 247, 0.18);
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ========================================
+       RESET & BASE
+    ======================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-deepest);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ========================================
+       ANIMATED BACKGROUND
+    ======================================== */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.25;
+      animation: orbFloat 12s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #2563eb, transparent 70%);
+      top: -200px; left: -150px;
+      animation-delay: 0s;
+    }
+    .orb-2 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #7c3aed, transparent 70%);
+      top: 40%; right: -200px;
+      animation-delay: -4s;
+    }
+    .orb-3 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #0891b2, transparent 70%);
+      bottom: -150px; left: 30%;
+      animation-delay: -8s;
+    }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      33%       { transform: translateY(-40px) scale(1.05); }
+      66%       { transform: translateY(20px) scale(0.97); }
+    }
+
+    /* ========================================
+       GRID OVERLAY
+    ======================================== */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(79, 142, 247, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 142, 247, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ========================================
+       LAYOUT
+    ======================================== */
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 80px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    .header {
+      text-align: center;
+      padding: 48px 0 40px;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 20px;
+    }
+
+    .header-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, #e8f0fe 0%, var(--accent-primary) 50%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* ========================================
+       PROGRESS STEPS
+    ======================================== */
+    .progress-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 36px;
+      gap: 0;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+    }
+
+    .step-circle {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      border: 2px solid var(--border-subtle);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      transition: var(--transition);
+      cursor: default;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-circle.active {
+      border-color: var(--accent-primary);
+      background: rgba(79, 142, 247, 0.15);
+      color: var(--accent-primary);
+      box-shadow: 0 0 20px rgba(79, 142, 247, 0.35);
+    }
+
+    .step-circle.done {
+      border-color: var(--accent-green);
+      background: rgba(52, 211, 153, 0.15);
+      color: var(--accent-green);
+    }
+
+    .step-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 6px;
+      white-space: nowrap;
+    }
+
+    .step-label.active { color: var(--accent-primary); }
+    .step-label.done { color: var(--accent-green); }
+
+    .step-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .step-connector {
+      width: 60px;
+      height: 2px;
+      background: var(--border-subtle);
+      margin: 0 4px;
+      margin-bottom: 22px;
+      transition: var(--transition);
+    }
+
+    .step-connector.done {
+      background: var(--accent-green);
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+
+    /* ========================================
+       GLASS CARD
+    ======================================== */
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      box-shadow: var(--shadow-card), var(--shadow-glow);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      margin-bottom: 32px;
+    }
+
+    .card-header .step-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+    }
+
+    .card-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .card-header p {
+      color: var(--text-secondary);
+      font-size: 0.93rem;
+    }
+
+    /* ========================================
+       SLIDER COMPONENT
+    ======================================== */
+    .sliders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 28px 40px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .slider-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .slider-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      min-width: 70px;
+      text-align: right;
+    }
+
+    .slider-track-wrapper {
+      position: relative;
+      height: 6px;
+      background: var(--bg-input);
+      border-radius: 99px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .slider-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent-glow), var(--accent-cyan));
+      box-shadow: 0 0 10px rgba(79, 142, 247, 0.5);
+      pointer-events: none;
+      transition: width 0.05s;
+    }
+
+    input[type="range"] {
+      position: absolute;
+      inset: -6px 0;
+      width: 100%;
+      height: 18px;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .slider-thumb {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: white;
+      border: 2px solid var(--accent-primary);
+      box-shadow: 0 0 12px rgba(79, 142, 247, 0.6);
+      pointer-events: none;
+      transition: box-shadow 0.2s;
+    }
+
+    .slider-track-wrapper:hover .slider-thumb {
+      box-shadow: 0 0 20px rgba(79, 142, 247, 0.9);
+    }
+
+    /* ========================================
+       DEALBREAKER TOGGLE
+    ======================================== */
+    .dealbreaker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .db-option {
+      position: relative;
+    }
+
+    .db-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0; height: 0;
+    }
+
+    .db-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-subtle);
+      background: var(--bg-input);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .db-label:hover {
+      border-color: var(--border-glow);
+      background: var(--bg-glass);
+    }
+
+    .db-option input:checked + .db-label {
+      border-color: var(--accent-primary);
+      background: rgba(79, 142, 247, 0.12);
+      box-shadow: 0 0 20px rgba(79, 142, 247, 0.2), inset 0 0 0 1px rgba(79, 142, 247, 0.2);
+    }
+
+    .db-icon {
+      font-size: 18px;
+    }
+
+    .db-text {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .db-option input:checked + .db-label .db-text {
+      color: var(--text-primary);
+    }
+
+    .db-check {
+      margin-left: auto;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: transparent;
+      transition: var(--transition);
+    }
+
+    .db-option input:checked + .db-label .db-check {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: white;
+    }
+
+    /* ========================================
+       BUTTONS
+    ======================================== */
+    .btn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 36px;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 28px;
+      border-radius: var(--radius-md);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      outline: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-glow));
+      color: white;
+      box-shadow: 0 4px 24px rgba(79, 142, 247, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(79, 142, 247, 0.6);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--border-glow);
+      color: var(--text-primary);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 13px 16px;
+    }
+
+    .btn-ghost:hover { color: var(--text-secondary); }
+
+    .btn-cta {
+      background: linear-gradient(135deg, #6d28d9, var(--accent-primary));
+      color: white;
+      padding: 16px 40px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 4px 32px rgba(109, 40, 217, 0.45);
+      letter-spacing: 0.02em;
+    }
+
+    .btn-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 40px rgba(109, 40, 217, 0.6);
+    }
+
+    /* ========================================
+       RESULTS VIEW
+    ======================================== */
+    .results-section {
+      animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .results-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .results-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #e8f0fe, var(--accent-primary), var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .results-header p { color: var(--text-secondary); }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 700px) {
+      .results-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .result-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transition: var(--transition);
+      animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    .result-card:nth-child(1) { animation-delay: 0.1s; }
+    .result-card:nth-child(2) { animation-delay: 0.2s; }
+    .result-card:nth-child(3) { animation-delay: 0.3s; }
+
+    .result-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--border-glow);
+      box-shadow: var(--shadow-card), 0 16px 48px rgba(0,0,0,0.4);
+    }
+
+    .result-card.featured {
+      border-color: rgba(79, 142, 247, 0.4);
+      background: linear-gradient(160deg, rgba(12,20,40,0.95), rgba(20,40,80,0.85));
+      box-shadow: var(--shadow-card), 0 0 40px rgba(79, 142, 247, 0.2);
+    }
+
+    .result-badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 50px;
+    }
+
+    .badge-perfect {
+      background: rgba(79, 142, 247, 0.15);
+      color: var(--accent-primary);
+      border: 1px solid rgba(79, 142, 247, 0.3);
+    }
+
+    .badge-budget {
+      background: rgba(52, 211, 153, 0.12);
+      color: var(--accent-green);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+    }
+
+    .badge-premium {
+      background: rgba(167, 139, 250, 0.12);
+      color: var(--accent-violet);
+      border: 1px solid rgba(167, 139, 250, 0.25);
+    }
+
+    /* Circular Progress */
+    .circular-progress {
+      position: relative;
+      width: 110px; height: 110px;
+    }
+
+    .circular-progress svg {
+      transform: rotate(-90deg);
+    }
+
+    .circular-progress .track {
+      fill: none;
+      stroke: var(--bg-input);
+      stroke-width: 8;
+    }
+
+    .circular-progress .fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 283;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .fill-perfect { stroke: url(#grad-perfect); }
+    .fill-budget  { stroke: var(--accent-green); }
+    .fill-premium { stroke: var(--accent-violet); }
+
+    .circular-percent {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+    }
+
+    .circular-percent .pct-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .circular-percent .pct-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .result-phone-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .result-brand {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .result-price {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent-gold);
+    }
+
+    .result-specs {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .spec-chip {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .spec-chip .spec-icon { font-size: 13px; }
+
+    .spec-chip .spec-val {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .spec-chip .spec-key {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    /* ========================================
+       RESTART BUTTON
+    ======================================== */
+    .restart-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 36px;
+    }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 600px) {
+      .glass-card { padding: 28px 20px; }
+      .sliders-grid { grid-template-columns: 1fr; }
+      .step-connector { width: 30px; }
+      .btn-row { flex-direction: column-reverse; }
+      .btn { width: 100%; justify-content: center; }
+    }
+
+    /* ========================================
+       LOADING STATE
+    ======================================== */
+    .loading-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 60px;
+    }
+
+    .spinner {
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      border: 3px solid var(--border-subtle);
+      border-top-color: var(--accent-primary);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* ========================================
+       MISC
+    ======================================== */
+    .divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 24px 0;
+    }
+
+    .feature-tip {
+      background: rgba(34, 211, 238, 0.06);
+      border: 1px solid rgba(34, 211, 238, 0.15);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .feature-tip .tip-icon { font-size: 18px; flex-shrink: 0; }
+
+    .feature-tip p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .feature-tip strong { color: var(--accent-cyan); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- Background decoration -->
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- SVG gradient defs (hidden) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="grad-perfect" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f8ef7"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="grad-premium" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#fb7185"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="app-wrapper">
+  <div class="container">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-badge">
+        <span class="dot"></span>
+        AI-Powered · Content-Based Filtering
+      </div>
+      <h1>Find Your Perfect Phone</h1>
+      <p>Answer 4 quick steps to let our recommendation engine match you with the ideal smartphone — powered by real machine learning math.</p>
+    </header>
+
+    <!-- PROGRESS NAV -->
+    <nav class="progress-nav" id="progressNav" aria-label="Wizard steps">
+      <!-- Dynamically rendered by JS -->
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main id="appMain">
+      <!-- Dynamically rendered by JS -->
+    </main>
+
+  </div>
+</div>
+
+<script type="module">
+// ============================================================
+//  DATA — 10 phones, 14 attributes each
+// ============================================================
+const phones = [
+  { id:1, name:"Samsung Galaxy S25 Ultra", brand:"Samsung",
+    price:129999, battery:5000, screen:6.8, storage:512, processor:3.39, camera:200, charging:45,
+    performance:10, quality:9, sound:8, design:9, network:10, software:9, build:10 },
+  { id:2, name:"Apple iPhone 16 Pro", brand:"Apple",
+    price:119900, battery:3274, screen:6.3, storage:256, processor:3.78, camera:48, charging:27,
+    performance:10, quality:10, sound:9, design:10, network:9, software:10, build:10 },
+  { id:3, name:"Google Pixel 9 Pro", brand:"Google",
+    price:109999, battery:4700, screen:6.3, storage:256, processor:3.1, camera:50, charging:37,
+    performance:9, quality:9, sound:8, design:9, network:9, software:10, build:9 },
+  { id:4, name:"OnePlus 12", brand:"OnePlus",
+    price:64999, battery:5400, screen:6.82, storage:256, processor:3.3, camera:50, charging:100,
+    performance:9, quality:8, sound:8, design:8, network:8, software:8, build:8 },
+  { id:5, name:"Xiaomi 14 Ultra", brand:"Xiaomi",
+    price:99999, battery:5000, screen:6.73, storage:512, processor:3.3, camera:50, charging:90,
+    performance:9, quality:9, sound:8, design:9, network:9, software:7, build:9 },
+  { id:6, name:"Samsung Galaxy A55", brand:"Samsung",
+    price:38999, battery:5000, screen:6.6, storage:128, processor:2.75, camera:50, charging:25,
+    performance:7, quality:7, sound:6, design:7, network:7, software:7, build:7 },
+  { id:7, name:"Motorola Edge 50 Pro", brand:"Motorola",
+    price:31999, battery:4500, screen:6.7, storage:256, processor:2.96, camera:50, charging:125,
+    performance:8, quality:7, sound:7, design:8, network:8, software:8, build:7 },
+  { id:8, name:"Nothing Phone (2a)", brand:"Nothing",
+    price:18999, battery:5000, screen:6.7, storage:128, processor:2.85, camera:50, charging:45,
+    performance:7, quality:7, sound:6, design:9, network:7, software:8, build:8 },
+  { id:9, name:"ASUS ROG Phone 8 Pro", brand:"ASUS",
+    price:94999, battery:5500, screen:6.78, storage:512, processor:3.39, camera:50, charging:65,
+    performance:10, quality:8, sound:10, design:7, network:9, software:8, build:9 },
+  { id:10, name:"Realme 12 Pro+", brand:"Realme",
+    price:27999, battery:5000, screen:6.7, storage:256, processor:2.21, camera:64, charging:67,
+    performance:7, quality:7, sound:6, design:8, network:7, software:6, build:7 },
+];
+
+// ============================================================
+//  FEATURE CONFIG
+// ============================================================
+const FEATURE_CONFIG = {
+  price:       { label:"Price",       unit:"₹",    min:10000, max:140000, step:1000, icon:"💰" },
+  battery:     { label:"Battery",     unit:"mAh",  min:2000, max:6000, step:100, icon:"🔋" },
+  screen:      { label:"Screen",      unit:"in",   min:5.0,  max:7.2,  step:0.1, icon:"📐" },
+  storage:     { label:"Storage",     unit:"GB",   min:64,   max:1024, step:64,  icon:"💾" },
+  processor:   { label:"Processor",   unit:"GHz",  min:1.5,  max:4.0,  step:0.1, icon:"⚡" },
+  camera:      { label:"Camera",      unit:"MP",   min:12,   max:200,  step:2,   icon:"📷" },
+  charging:    { label:"Charging",    unit:"W",    min:15,   max:125,  step:5,   icon:"🔌" },
+  network:     { label:"Network",     unit:"/10",  min:1,    max:10,   step:1,   icon:"📶" },
+  performance: { label:"Performance", unit:"/10",  min:1,    max:10,   step:1,   icon:"🚀" },
+  quality:     { label:"Quality",     unit:"/10",  min:1,    max:10,   step:1,   icon:"✨" },
+  sound:       { label:"Sound",       unit:"/10",  min:1,    max:10,   step:1,   icon:"🔊" },
+  design:      { label:"Design",      unit:"/10",  min:1,    max:10,   step:1,   icon:"🎨" },
+  software:    { label:"Software",    unit:"/10",  min:1,    max:10,   step:1,   icon:"🖥️"  },
+  build:       { label:"Build",       unit:"/10",  min:1,    max:10,   step:1,   icon:"🏗️"  },
+};
+
+const ALL_FEATURES = Object.keys(FEATURE_CONFIG);
+
+// ============================================================
+//  WIZARD STEP DEFINITIONS
+// ============================================================
+const STEPS = [
+  {
+    id: "basics",
+    label: "The Basics",
+    title: "Core Specifications",
+    description: "Set your ideal ranges for price and the fundamental specs.",
+    features: ["price","battery","screen","storage"],
+    tip: null,
+  },
+  {
+    id: "engine",
+    label: "The Engine",
+    title: "Performance Hardware",
+    description: "Configure processor speed, camera resolution, fast-charging, and connectivity.",
+    features: ["processor","camera","charging","network"],
+    tip: null,
+  },
+  {
+    id: "experience",
+    label: "The Experience",
+    title: "User Experience",
+    description: "Rate how much you care about software, sound, build quality, and aesthetics.",
+    features: ["performance","quality","sound","design","software","build"],
+    tip: null,
+  },
+  {
+    id: "dealbreaker",
+    label: "Dealbreaker",
+    title: "Your #1 Priority",
+    description: "Pick the single most important attribute. Our engine will apply a 5× weight multiplier to maximize influence on your results.",
+    features: null,
+    tip: "The Dealbreaker feature receives a <strong>5× weight multiplier</strong> in the Weighted Euclidean Distance formula — making mismatches on this attribute far more costly.",
+  },
+];
+
+// ============================================================
+//  ENGINE — Min-Max Normalization + Weighted Euclidean Distance
+// ============================================================
+function normalize(feature, value) {
+  const { min, max } = FEATURE_CONFIG[feature];
+  if (max === min) return 0;
+  return (value - min) / (max - min);
+}
+
+function buildVector(obj) {
+  return ALL_FEATURES.map(f => normalize(f, obj[f]));
+}
+
+function weightedEuclidean(vecA, vecB, dealbreaker) {
+  const DEALBREAKER_WEIGHT = 5.0;
+  let sumSq = 0;
+  ALL_FEATURES.forEach((f, i) => {
+    const w = f === dealbreaker ? DEALBREAKER_WEIGHT : 1.0;
+    const d = vecA[i] - vecB[i];
+    sumSq += w * d * d;
+  });
+  return Math.sqrt(sumSq);
+}
+
+function distanceToPercent(distance, maxDistance) {
+  if (maxDistance === 0) return 100;
+  return Math.round((1 - distance / maxDistance) * 100);
+}
+
+function getRecommendations(userPrefs, dealbreaker) {
+  const userVec = buildVector(userPrefs);
+  const scored = phones.map(phone => ({
+    phone,
+    distance: weightedEuclidean(userVec, buildVector(phone), dealbreaker),
+  }));
+  scored.sort((a, b) => a.distance - b.distance);
+  const maxDist = scored[scored.length - 1].distance;
+  return scored.map(item => ({ ...item, matchPercent: distanceToPercent(item.distance, maxDist) }));
+}
+
+function selectTop3(recs) {
+  const perfect = recs[0];
+  const perfectPrice = perfect.phone.price;
+  const budgetCandidates  = recs.slice(1).filter(r => r.phone.price < perfectPrice);
+  const premiumCandidates = recs.slice(1).filter(r => r.phone.price > perfectPrice);
+  return {
+    perfect,
+    budget:  budgetCandidates.length  > 0 ? budgetCandidates[0]  : recs[1],
+    premium: premiumCandidates.length > 0 ? premiumCandidates[0] : (recs[2] || recs[1]),
+  };
+}
+
+// ============================================================
+//  APP STATE
+// ============================================================
+const defaultPrefs = {};
+ALL_FEATURES.forEach(f => {
+  const cfg = FEATURE_CONFIG[f];
+  defaultPrefs[f] = Math.round((cfg.min + cfg.max) / 2 / cfg.step) * cfg.step;
+});
+
+let state = {
+  step: 0,         // 0-3 = wizard steps, 4 = results
+  prefs: { ...defaultPrefs },
+  dealbreaker: null,
+  results: null,
+};
+
+// ============================================================
+//  RENDER HELPERS
+// ============================================================
+function formatValue(feature, value) {
+  const cfg = FEATURE_CONFIG[feature];
+  if (cfg.unit === "₹") return `₹${value.toLocaleString('en-IN')}`;
+  if (cfg.unit === "mAh") return `${value.toLocaleString('en-IN')} mAh`;
+  if (cfg.unit === "in") return `${value.toFixed(1)}"`;
+  if (cfg.unit === "GB") return `${value} GB`;
+  if (cfg.unit === "GHz") return `${value.toFixed(1)} GHz`;
+  if (cfg.unit === "MP") return `${value} MP`;
+  if (cfg.unit === "W") return `${value} W`;
+  if (cfg.unit === "/10") return `${value} / 10`;
+  return value;
+}
+
+function getFillPercent(feature, value) {
+  const { min, max } = FEATURE_CONFIG[feature];
+  return ((value - min) / (max - min)) * 100;
+}
+
+// ============================================================
+//  RENDER PROGRESS NAV
+// ============================================================
+function renderProgressNav() {
+  const nav = document.getElementById('progressNav');
+  const stepLabels = [...STEPS.map(s => s.label), 'Results'];
+  const totalSteps = STEPS.length; // 0-3 wizard, 4 = results (hide from nav)
+
+  let html = '';
+  STEPS.forEach((s, i) => {
+    const isDone   = state.step > i;
+    const isActive = state.step === i && state.step < 4;
+    const circleClass = isDone ? 'done' : (isActive ? 'active' : '');
+    const labelClass  = isDone ? 'done' : (isActive ? 'active' : '');
+    const icon = isDone ? '✓' : (i + 1);
+
+    html += `<div class="step-wrapper">
+      <div class="step-circle ${circleClass}" id="step-circle-${i}">${icon}</div>
+      <div class="step-label ${labelClass}">${s.label}</div>
+    </div>`;
+
+    if (i < STEPS.length - 1) {
+      html += `<div class="step-connector ${isDone ? 'done' : ''}"></div>`;
+    }
+  });
+
+  nav.innerHTML = html;
+  nav.style.display = state.step >= 4 ? 'none' : '';
+}
+
+// ============================================================
+//  RENDER SLIDER
+// ============================================================
+function renderSlider(feature) {
+  const cfg = FEATURE_CONFIG[feature];
+  const val = state.prefs[feature];
+  const fillPct = getFillPercent(feature, val);
+
+  return `
+    <div class="slider-group" id="sg-${feature}">
+      <div class="slider-header">
+        <span class="slider-label">${cfg.icon} ${cfg.label}</span>
+        <span class="slider-value" id="sv-${feature}">${formatValue(feature, val)}</span>
+      </div>
+      <div class="slider-track-wrapper" id="tw-${feature}">
+        <div class="slider-fill" id="sf-${feature}" style="width:${fillPct}%"></div>
+        <div class="slider-thumb" id="st-${feature}" style="left:${fillPct}%"></div>
+        <input
+          type="range"
+          id="sl-${feature}"
+          data-feature="${feature}"
+          min="${cfg.min}"
+          max="${cfg.max}"
+          step="${cfg.step}"
+          value="${val}"
+          aria-label="${cfg.label}"
+        />
+      </div>
+    </div>`;
+}
+
+// ============================================================
+//  RENDER WIZARD STEP
+// ============================================================
+function renderWizardStep(stepIdx) {
+  const step = STEPS[stepIdx];
+  const isFirst = stepIdx === 0;
+  const isLast  = stepIdx === STEPS.length - 1;
+
+  let bodyHtml = '';
+
+  if (step.tip) {
+    bodyHtml += `
+      <div class="feature-tip">
+        <span class="tip-icon">💡</span>
+        <p>${step.tip}</p>
+      </div>`;
+  }
+
+  if (step.features) {
+    bodyHtml += `<div class="sliders-grid">
+      ${step.features.map(renderSlider).join('')}
+    </div>`;
+  } else {
+    // Dealbreaker step
+    bodyHtml += `<div class="dealbreaker-grid">
+      ${ALL_FEATURES.map(f => {
+        const cfg = FEATURE_CONFIG[f];
+        const checked = state.dealbreaker === f;
+        return `
+          <div class="db-option">
+            <input type="radio" name="dealbreaker" id="db-${f}" value="${f}" ${checked ? 'checked' : ''} />
+            <label class="db-label" for="db-${f}">
+              <span class="db-icon">${cfg.icon}</span>
+              <span class="db-text">${cfg.label}</span>
+              <span class="db-check">${checked ? '✓' : ''}</span>
+            </label>
+          </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  const canProceed = isLast ? (state.dealbreaker !== null) : true;
+
+  const html = `
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="step-tag">Step ${stepIdx + 1} of ${STEPS.length}</div>
+        <h2>${step.title}</h2>
+        <p>${step.description}</p>
+      </div>
+      ${bodyHtml}
+      <div class="btn-row">
+        ${isFirst
+          ? `<button class="btn btn-ghost" id="btnReset">↺ Reset</button>`
+          : `<button class="btn btn-secondary" id="btnBack">← Back</button>`}
+        ${isLast
+          ? `<button class="btn btn-cta" id="btnFind" ${canProceed ? '' : 'disabled'}>🔍 Find My Phone</button>`
+          : `<button class="btn btn-primary" id="btnNext">Next Step →</button>`}
+      </div>
+    </div>`;
+
+  return html;
+}
+
+// ============================================================
+//  RENDER CIRCULAR PROGRESS
+// ============================================================
+function renderCircle(pct, type) {
+  const r = 45;
+  const circumference = 2 * Math.PI * r; // ≈ 283
+  const offset = circumference - (pct / 100) * circumference;
+  const fillClass = `fill-${type}`;
+  const strokeVal = type === 'premium' ? 'url(#grad-premium)' : '';
+
+  return `
+    <div class="circular-progress" data-pct="${pct}" data-type="${type}">
+      <svg width="110" height="110" viewBox="0 0 110 110">
+        <circle class="track" cx="55" cy="55" r="${r}" />
+        <circle class="${fillClass} fill" cx="55" cy="55" r="${r}"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${circumference}"
+          id="circle-${type}" />
+      </svg>
+      <div class="circular-percent">
+        <span class="pct-value" id="pct-val-${type}">0%</span>
+        <span class="pct-label">Match</span>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+//  RENDER RESULT CARD
+// ============================================================
+function renderResultCard(item, type, badgeLabel) {
+  const { phone, matchPercent } = item;
+  const badgeClass = `badge-${type}`;
+  const featured = type === 'perfect' ? 'featured' : '';
+
+  return `
+    <div class="result-card ${featured}">
+      <div class="result-badge ${badgeClass}">${badgeLabel}</div>
+      ${renderCircle(matchPercent, type)}
+      <div>
+        <div class="result-brand">${phone.brand}</div>
+        <div class="result-phone-name">${phone.name}</div>
+      </div>
+      <div class="result-price">₹${phone.price.toLocaleString('en-IN')}</div>
+      <div class="result-specs">
+        <div class="spec-chip">
+          <span class="spec-icon">🔋</span>
+          <span class="spec-val">${phone.battery.toLocaleString()}</span>
+          <span class="spec-key">mAh</span>
+        </div>
+        <div class="spec-chip">
+          <span class="spec-icon">📷</span>
+          <span class="spec-val">${phone.camera} MP</span>
+          <span class="spec-key">Camera</span>
+        </div>
+        <div class="spec-chip">
+          <span class="spec-icon">💾</span>
+          <span class="spec-val">${phone.storage} GB</span>
+          <span class="spec-key">Storage</span>
+        </div>
+        <div class="spec-chip">
+          <span class="spec-icon">🔌</span>
+          <span class="spec-val">${phone.charging} W</span>
+          <span class="spec-key">Charging</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+//  RENDER RESULTS
+// ============================================================
+function renderResults() {
+  const { perfect, budget, premium } = state.results;
+  const dbLabel = state.dealbreaker
+    ? `Dealbreaker: <strong style="color:var(--accent-cyan)">${FEATURE_CONFIG[state.dealbreaker].label}</strong>`
+    : 'No dealbreaker selected';
+
+  const html = `
+    <div class="results-section">
+      <div class="results-header">
+        <h2>🎯 Your Top Matches</h2>
+        <p>Based on your preferences — ${dbLabel}</p>
+      </div>
+      <div class="results-grid" id="resultsGrid">
+        ${renderResultCard(perfect, 'perfect', '⭐ Perfect Match')}
+        ${renderResultCard(budget,  'budget',  '💚 Budget Pick')}
+        ${renderResultCard(premium, 'premium', '💜 Premium Upgrade')}
+      </div>
+      <div class="restart-row">
+        <button class="btn btn-secondary" id="btnRestart">← Start Over</button>
+      </div>
+    </div>`;
+
+  return html;
+}
+
+// ============================================================
+//  ANIMATE CIRCLES AFTER RENDER
+// ============================================================
+function animateCircles() {
+  const types = ['perfect', 'budget', 'premium'];
+  types.forEach((type, i) => {
+    const circle = document.getElementById(`circle-${type}`);
+    const pctEl  = document.getElementById(`pct-val-${type}`);
+    const wrapper = circle?.closest('.circular-progress');
+    if (!circle || !pctEl || !wrapper) return;
+
+    const targetPct = parseInt(wrapper.dataset.pct);
+    const circumference = 283;
+
+    setTimeout(() => {
+      // Animate stroke
+      const offset = circumference - (targetPct / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+
+      // Animate number
+      let current = 0;
+      const duration = 1200;
+      const startTime = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        current = Math.round(eased * targetPct);
+        pctEl.textContent = `${current}%`;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }, i * 150);
+  });
+}
+
+// ============================================================
+//  BIND EVENTS
+// ============================================================
+function bindSliderEvents() {
+  ALL_FEATURES.forEach(feature => {
+    const input = document.getElementById(`sl-${feature}`);
+    if (!input) return;
+
+    input.addEventListener('input', (e) => {
+      const raw = parseFloat(e.target.value);
+      const cfg = FEATURE_CONFIG[feature];
+      const val  = cfg.unit === 'in' ? Math.round(raw / cfg.step) * cfg.step : parseInt(raw);
+      state.prefs[feature] = val;
+
+      const fillPct = getFillPercent(feature, val);
+      document.getElementById(`sv-${feature}`).textContent = formatValue(feature, val);
+      document.getElementById(`sf-${feature}`).style.width = `${fillPct}%`;
+      document.getElementById(`st-${feature}`).style.left  = `${fillPct}%`;
+    });
+  });
+}
+
+function bindStepEvents() {
+  document.getElementById('btnNext')?.addEventListener('click', () => {
+    state.step++;
+    render();
+  });
+
+  document.getElementById('btnBack')?.addEventListener('click', () => {
+    state.step--;
+    render();
+  });
+
+  document.getElementById('btnReset')?.addEventListener('click', () => {
+    state.prefs = { ...defaultPrefs };
+    state.dealbreaker = null;
+    state.step = 0;
+    render();
+  });
+
+  document.getElementById('btnFind')?.addEventListener('click', () => {
+    const recs  = getRecommendations(state.prefs, state.dealbreaker);
+    state.results = selectTop3(recs);
+    state.step = 4;
+    render();
+    setTimeout(animateCircles, 100);
+  });
+
+  document.getElementById('btnRestart')?.addEventListener('click', () => {
+    state.prefs = { ...defaultPrefs };
+    state.dealbreaker = null;
+    state.step = 0;
+    state.results = null;
+    render();
+  });
+
+  // Dealbreaker radio
+  document.querySelectorAll('input[name="dealbreaker"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      state.dealbreaker = e.target.value;
+      // Enable button
+      const btn = document.getElementById('btnFind');
+      if (btn) btn.disabled = false;
+    });
+  });
+}
+
+// ============================================================
+//  MAIN RENDER
+// ============================================================
+function render() {
+  renderProgressNav();
+
+  const main = document.getElementById('appMain');
+
+  if (state.step < 4) {
+    main.innerHTML = renderWizardStep(state.step);
+    bindSliderEvents();
+    bindStepEvents();
+  } else {
+    main.innerHTML = renderResults();
+    bindStepEvents();
+  }
+}
+
+// ============================================================
+//  BOOT
+// ============================================================
+render();
+</script>
+</body>
+</html>

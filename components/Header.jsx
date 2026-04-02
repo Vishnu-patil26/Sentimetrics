@@ -1,0 +1,43 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import styles from './Header.module.css';
+
+const NAV_LINKS = [
+  { href: '/',               label: 'Home' },
+  { href: '/precision-pick', label: 'Precision Pick' },
+  { href: '/compare',        label: 'Compare' },
+  { href: '/chatbot',        label: 'AI Chatbot' },
+];
+
+export default function Header() {
+  const pathname = usePathname();
+
+  return (
+    <header className={styles.header}>
+      <div className={styles.inner}>
+
+        {/* Logo */}
+        <Link href="/" className={styles.logo}>
+          <span className={styles.senti}>Senti</span>
+          <span className={styles.metrics}>metrics</span>
+        </Link>
+
+        {/* Nav */}
+        <nav className={styles.nav}>
+          {NAV_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`${styles.navLink} ${pathname === href ? styles.active : ''}`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+      </div>
+    </header>
+  );
+}

@@ -7,7 +7,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "frame-src 'self' https://sentimetrics.zapier.app https://*.zapier.app;",
+            value: "frame-src 'self' https://sentimetrics.zapier.app https://*.zapier.app https://interfaces.zapier.com;",
           },
         ],
       },

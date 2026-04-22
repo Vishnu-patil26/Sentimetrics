@@ -14,19 +14,21 @@
 //  4. Store your API key in .env.local (never commit it to version control)
 // ─────────────────────────────────────────────────────────────────────────────
 
+import Script from 'next/script';
+
 export default function Chatbot() {
   return (
-    <iframe
-      src="https://sentimetrics.zapier.app"
-      title="Sentimetrics AI Phone Advisor"
-      style={{
-        display: 'block',
-        width: '100%',
-        height: 'calc(100vh - 64px)',
-        border: 'none',
-        background: 'transparent',
-      }}
-      allow="microphone; clipboard-write"
-    />
+    <div style={{ width: '100%', height: 'calc(100vh - 64px)' }}>
+      <Script 
+        type="module" 
+        src="https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js" 
+        strategy="lazyOnload"
+      />
+      <zapier-interfaces-chatbot-embed 
+        is-popup="false" 
+        chatbot-id="cmngc0d6i002w3ncsli612e08"
+        style={{ width: '100%', height: '100%' }}
+      />
+    </div>
   );
 }
